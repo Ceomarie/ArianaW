@@ -40,6 +40,24 @@ repo root.
 `apps/web/public/_redirects` (`/* /index.html 200`) which Vite copies into
 `dist/`.
 
-Both give you working deep links: `https://<host>/r/<slug>` loads the recorder
-directly. Any other static host works too — just build `apps/web/dist` from the
-repo root and add an equivalent SPA fallback.
+**GitHub Pages** — uses `.github/workflows/pages.yml`, which builds and deploys
+on every push to the default branch. One-time setup:
+
+1. In the repo, go to **Settings → Pages → Build and deployment → Source** and
+   choose **GitHub Actions** (the workflow also tries to enable this
+   automatically).
+2. Add the two values as repository **secrets** (**Settings → Secrets and
+   variables → Actions**): `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+   They're public anon values, but secrets keeps them out of the repo.
+3. Push (or run the workflow manually). The site publishes at
+   `https://<user>.github.io/<repo>/`.
+
+The workflow sets Vite's `base` to `/<repo>/` (via `actions/configure-pages`)
+so assets resolve, and copies `index.html` to `404.html` so deep links like
+`/<repo>/r/<slug>` boot the app (Pages has no server-side rewrites). Point the
+mobile app's `EXPO_PUBLIC_WEB_BASE_URL` at `https://<user>.github.io/<repo>` so
+share links and QR codes use the live URL.
+
+All three give you working deep links: `https://<host>/…/r/<slug>` loads the
+recorder directly. Any other static host works too — just build `apps/web/dist`
+from the repo root and add an equivalent SPA fallback.

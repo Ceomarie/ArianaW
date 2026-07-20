@@ -1,0 +1,69 @@
+name: Deploy contributor web app to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/half-marathon-audio-notes-h2nu1l
+    paths:
+      - "apps/web/**"
+      - "packages/shared/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+# Allow the workflow to publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let a newer run cancel an in-progress one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          # Auto-enable Pages (Actions source) if it isn't already.
+          enablement: true
+      - name: Install (workspaces)
+        run: npm install
+      - name: Build web app
+        run: npm run build:web
+        env:
+          # Serve under /<repo>/ with correct asset URLs.
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # Public Supabase values — add these as repository secrets.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: SPA fallback for deep links (/r/:slug)
+        # GitHub Pages has no server rewrites, so it serves 404.html for unknown
+        # paths. Making it a copy of index.html boots the app, which then reads
+        # the slug from the URL client-side.
+        run: cp apps/web/dist/index.html apps/web/dist/404.html
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
