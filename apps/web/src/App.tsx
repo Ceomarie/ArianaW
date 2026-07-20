@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicRace } from "@racenotes/shared";
-import { supabase, AUDIO_BUCKET } from "./lib/supabase.js";
+import { supabase, AUDIO_BUCKET, isConfigured } from "./lib/supabase.js";
 import { useRecorder, MAX_SECONDS } from "./lib/useRecorder.js";
 import { extensionForMime, readAudioDuration } from "./lib/audio.js";
 
@@ -13,7 +13,14 @@ function useSlug(): string | null {
   }, []);
 }
 
-type Phase = "loading" | "form" | "submitting" | "done" | "notfound";
+type Phase =
+  | "loading"
+  | "form"
+  | "submitting"
+  | "done"
+  | "landing" // opened the bare site with no /r/<slug>
+  | "unconfigured" // the deploy is missing its Supabase env values
+  | "notfound"; // a slug was given but no race matched (or the lookup failed)
 
 export function App() {
   const slug = useSlug();
@@ -30,8 +37,14 @@ export function App() {
   const recorder = useRecorder();
 
   useEffect(() => {
+    // No race code in the URL — show a friendly landing, not an error.
     if (!slug) {
-      setPhase("notfound");
+      setPhase("landing");
+      return;
+    }
+    // The site was deployed without its Supabase values, so lookups can't work.
+    if (!isConfigured) {
+      setPhase("unconfigured");
       return;
     }
     supabase
@@ -39,6 +52,7 @@ export function App() {
       .then(({ data, error }) => {
         const row = Array.isArray(data) ? data[0] : data;
         if (error || !row) {
+          if (error) console.error("get_public_race failed:", error.message);
           setPhase("notfound");
           return;
         }
@@ -93,13 +107,44 @@ export function App() {
 
   if (phase === "loading") return <Center>Loading…</Center>;
 
+  if (phase === "landing") {
+    return (
+      <Center>
+        <div className="badge">🏃🎧</div>
+        <h1>RaceNotes</h1>
+        <p className="muted">
+          This is where friends leave a voice note for a runner — it plays at the
+          mile they pick, right in the runner's ears mid-race.
+        </p>
+        <p className="muted" style={{ marginTop: 12 }}>
+          To leave a note, open the personal link the runner shared with you. It
+          looks like <code>/r/their-code</code>.
+        </p>
+      </Center>
+    );
+  }
+
+  if (phase === "unconfigured") {
+    return (
+      <Center>
+        <h1>Almost set up</h1>
+        <p className="muted">
+          This site is deployed but isn't connected to its database yet, so it
+          can't load races. If you're the runner: add the{" "}
+          <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>{" "}
+          secrets and redeploy.
+        </p>
+      </Center>
+    );
+  }
+
   if (phase === "notfound") {
     return (
       <Center>
         <h1>Hmm, that link didn't work</h1>
         <p className="muted">
-          Double-check the link the runner sent you. It should look like{" "}
-          <code>/r/their-code</code>.
+          We couldn't find that race. Double-check the link the runner sent you —
+          it should look like <code>/r/their-code</code>.
         </p>
       </Center>
     );
