@@ -33,8 +33,8 @@ export interface Note {
   message: string | null;
   /** null = "play anytime" — the engine spreads these across the course. */
   mile_marker: number | null;
-  /** Storage object key inside the `audio-notes` bucket. */
-  audio_path: string;
+  /** Storage object key inside the `audio-notes` bucket. null = text-only note. */
+  audio_path: string | null;
   duration_seconds: number | null;
   status: NoteStatus;
   created_at: string;
@@ -46,6 +46,6 @@ export interface AddNoteInput {
   contributor_name: string;
   message: string | null;
   mile_marker: number | null;
-  audio_path: string;
+  audio_path: string | null;
   duration_seconds: number | null;
 }

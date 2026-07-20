@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import type { Note, Race } from "@racenotes/shared";
 import { listNotes, setNoteStatus, signedUrl, downloadApprovedNotes } from "../lib/notes";
-import { configureAudioSession, playNote } from "../lib/player";
+import { configureAudioSession, playNote, speakText } from "../lib/player";
 import { S, C } from "../theme";
 
 export function InboxScreen({
@@ -44,8 +44,12 @@ export function InboxScreen({
   async function preview(note: Note) {
     try {
       await configureAudioSession();
-      const url = await signedUrl(note.audio_path);
-      await playNote(url);
+      if (note.audio_path) {
+        const url = await signedUrl(note.audio_path);
+        await playNote(url);
+      } else if (note.message) {
+        await speakText(note.message); // text-only note — hear the TTS
+      }
     } catch (e) {
       setError((e as Error).message);
     }
@@ -98,17 +102,24 @@ export function InboxScreen({
         <View key={note.id} style={S.card}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <Text style={S.h2}>{note.contributor_name}</Text>
-            <View style={S.pill}>
-              <Text style={{ color: C.muted, fontSize: 12 }}>
-                {note.mile_marker == null ? "anytime" : `mile ${note.mile_marker}`}
-              </Text>
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              {!note.audio_path && (
+                <View style={S.pill}>
+                  <Text style={{ color: C.muted, fontSize: 12 }}>🗣 spoken</Text>
+                </View>
+              )}
+              <View style={S.pill}>
+                <Text style={{ color: C.muted, fontSize: 12 }}>
+                  {note.mile_marker == null ? "anytime" : `mile ${note.mile_marker}`}
+                </Text>
+              </View>
             </View>
           </View>
           {note.message ? <Text style={S.muted}>“{note.message}”</Text> : null}
 
           <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
             <TouchableOpacity style={[S.secondary, { flex: 1 }]} onPress={() => preview(note)}>
-              <Text style={S.secondaryText}>▶ Preview</Text>
+              <Text style={S.secondaryText}>{note.audio_path ? "▶ Preview" : "🗣 Read aloud"}</Text>
             </TouchableOpacity>
             {note.status !== "approved" ? (
               <TouchableOpacity
@@ -148,7 +159,7 @@ export function InboxScreen({
         {preparing ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text style={S.primaryText}>Download {approvedCount} & start run →</Text>
+          <Text style={S.primaryText}>Prepare {approvedCount} & start run →</Text>
         )}
       </TouchableOpacity>
       <View style={{ height: 40 }} />

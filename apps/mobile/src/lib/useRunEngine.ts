@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import {
   TriggerScheduler,
@@ -7,7 +7,7 @@ import {
   type ScheduledNote,
 } from "@racenotes/shared";
 import { runStore } from "./runStore";
-import { configureAudioSession, playNote } from "./player";
+import { configureAudioSession, playNote, speakText } from "./player";
 import { requestLocationPermission, startTracking, stopTracking } from "./locationTask";
 
 export interface RunEngine {
@@ -53,6 +53,8 @@ export function useRunEngine(
   const queueRef = useRef<string[]>([]);
   const drainingRef = useRef(false);
 
+  const noteById = useMemo(() => new Map(notes.map((n) => [n.id, n])), [notes]);
+
   // Keep an up-to-date plan/upcoming even before the run starts.
   useEffect(() => {
     const built = buildSchedule(notes, distanceMiles);
@@ -61,8 +63,10 @@ export function useRunEngine(
   }, [notes, distanceMiles]);
 
   const enqueue = useCallback((noteId: string) => {
+    const note = noteById.get(noteId);
     const uri = localUris[noteId];
-    if (!uri) return; // not downloaded — skip rather than crash
+    // Nothing to play: no downloaded audio and no text to speak.
+    if (!uri && !note?.message) return;
     queueRef.current.push(noteId);
     if (drainingRef.current) return;
 
@@ -70,11 +74,13 @@ export function useRunEngine(
     (async () => {
       while (queueRef.current.length > 0) {
         const id = queueRef.current.shift()!;
+        const n = noteById.get(id);
         const fileUri = localUris[id];
-        if (!fileUri) continue;
+        if (!fileUri && !n?.message) continue;
         setNowPlaying(id);
         try {
-          await playNote(fileUri);
+          if (fileUri) await playNote(fileUri);
+          else if (n?.message) await speakText(n.message); // text-only note
         } catch (e) {
           console.warn("note playback failed", e);
         }
@@ -82,7 +88,7 @@ export function useRunEngine(
       setNowPlaying(null);
       drainingRef.current = false;
     })();
-  }, [localUris]);
+  }, [localUris, noteById]);
 
   const start = useCallback(async () => {
     setError(null);

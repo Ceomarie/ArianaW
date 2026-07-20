@@ -8,8 +8,8 @@ RaceNotes.
 **Hosted project (fastest):**
 
 1. Create a project at https://supabase.com.
-2. Open the SQL editor and paste the contents of
-   `migrations/0001_init.sql`, then run it.
+2. Open the SQL editor and run each file in `migrations/` **in order**:
+   `0001_init.sql`, then `0002_text_only_notes.sql` (adds text-only notes).
 3. Copy the project URL and the **anon** public key into the app `.env` files
    (see the root `.env.example`).
 

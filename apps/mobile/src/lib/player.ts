@@ -7,6 +7,7 @@
  * ourselves; we just interject.
  */
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import * as Speech from "expo-speech";
 
 let configured = false;
 
@@ -52,5 +53,28 @@ export function playNote(localUri: string): Promise<void> {
     // Safety net: never hang the queue if the end event is missed.
     setTimeout(finish, 90_000);
     player.play();
+  });
+}
+
+/**
+ * Speak a text-only note aloud (text-to-speech) to completion. Uses the same
+ * audio session, so it ducks the runner's music like a recorded note does.
+ */
+export function speakText(text: string): Promise<void> {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    Speech.speak(text, {
+      rate: 1.0,
+      onDone: finish,
+      onStopped: finish,
+      onError: finish,
+    });
+    // Safety net for platforms that drop the done callback.
+    setTimeout(finish, 90_000);
   });
 }

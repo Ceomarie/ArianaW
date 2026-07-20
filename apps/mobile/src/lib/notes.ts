@@ -49,6 +49,7 @@ export async function downloadApprovedNotes(
   const result: Record<string, string> = {};
   for (const note of notes) {
     if (note.status !== "approved") continue;
+    if (!note.audio_path) continue; // text-only note — spoken at run time, nothing to fetch
     const ext = note.audio_path.split(".").pop() ?? "m4a";
     const dest = `${CACHE_DIR}${note.id}.${ext}`;
 

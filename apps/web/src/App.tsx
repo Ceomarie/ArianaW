@@ -50,21 +50,29 @@ export function App() {
 
   const audioBlob = uploaded?.blob ?? recorder.recording?.blob ?? null;
   const audioMime = uploaded?.mime ?? recorder.recording?.mimeType ?? "";
-  const canSubmit = !!race && name.trim().length > 0 && !!audioBlob;
+  // A note needs either audio or a written message (which we read aloud via TTS).
+  const canSubmit =
+    !!race && name.trim().length > 0 && (!!audioBlob || message.trim().length > 0);
 
   async function submit() {
-    if (!race || !audioBlob) return;
+    if (!race || (!audioBlob && message.trim().length === 0)) return;
     setError(null);
     setPhase("submitting");
     try {
-      const ext = extensionForMime(audioMime);
-      const path = `${race.id}/${crypto.randomUUID()}.${ext}`;
-      const duration = await readAudioDuration(audioBlob);
+      let path: string | null = null;
+      let duration: number | null = null;
 
-      const up = await supabase.storage
-        .from(AUDIO_BUCKET)
-        .upload(path, audioBlob, { contentType: audioMime, upsert: false });
-      if (up.error) throw up.error;
+      // Upload audio only if they recorded/attached one; otherwise it's a
+      // text-only note the runner's app will speak.
+      if (audioBlob) {
+        const ext = extensionForMime(audioMime);
+        path = `${race.id}/${crypto.randomUUID()}.${ext}`;
+        duration = await readAudioDuration(audioBlob);
+        const up = await supabase.storage
+          .from(AUDIO_BUCKET)
+          .upload(path, audioBlob, { contentType: audioMime, upsert: false });
+        if (up.error) throw up.error;
+      }
 
       const rpc = await supabase.rpc("add_note", {
         p_slug: race.share_slug,
@@ -72,7 +80,7 @@ export function App() {
         p_message: message.trim() || null,
         p_mile_marker: anywhere ? null : mile,
         p_audio_path: path,
-        p_duration_seconds: duration || null,
+        p_duration_seconds: duration,
       });
       if (rpc.error) throw rpc.error;
 
@@ -136,7 +144,11 @@ export function App() {
       </header>
 
       <section className="card">
-        <h2>1. Record your cheer</h2>
+        <h2>1. Record your cheer <span className="optional">(optional)</span></h2>
+        <p className="hint">
+          No mic handy? Skip this and just write a message below — the app will
+          read it aloud on the course.
+        </p>
         {recorder.state === "recording" ? (
           <button className="record recording" onClick={recorder.stop}>
             ⏹ Stop — {recorder.seconds}s
@@ -191,7 +203,11 @@ export function App() {
         />
         <input
           className="text"
-          placeholder="Optional short message (they'll see this)"
+          placeholder={
+            audioBlob
+              ? "Optional short message (they'll see this)"
+              : "Your message — we'll read this aloud on the course"
+          }
           maxLength={200}
           value={message}
           onChange={(e) => setMessage(e.target.value)}

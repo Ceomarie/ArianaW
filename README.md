@@ -9,7 +9,9 @@ Built for a real half-marathon in October, but reusable by anyone.
 ## How it works
 
 - **Friends** open a link you text them (no login), record or upload a quick
-  voice note, add a name + message, and pick a mile — or leave it a surprise.
+  voice note — or just type a message and skip the mic entirely — add a name,
+  and pick a mile (or leave it a surprise). Text-only notes are read aloud on
+  the course with text-to-speech.
 - **You** review and approve the notes in the app, then download them to your
   phone before the run.
 - **On the course** the app tracks your distance by GPS and, when you cross
