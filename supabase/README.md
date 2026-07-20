@@ -18,8 +18,19 @@ RaceNotes.
 ```bash
 npm i -g supabase        # or: brew install supabase/tap/supabase
 supabase start           # boots Postgres + Storage in Docker
-supabase db reset        # applies everything in migrations/
+supabase db reset        # applies migrations/ then runs seed.sql
 ```
+
+## Seed a demo race (test the page before the app exists)
+
+`seed.sql` inserts a demo race with the fixed slug **`demo`** (and a minimal
+user to own it), so you can open the contributor page right away:
+
+- **Local:** `supabase db reset` runs it automatically.
+- **Hosted:** paste `seed.sql` into the SQL editor and run it.
+
+Then visit `https://<your-host>/r/demo` to leave a test note. It's test data —
+delete the demo race and user when you're done.
 
 ## What the policies guarantee
 
