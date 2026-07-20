@@ -1,0 +1,12 @@
+# Netlify config for the contributor web app. Build from the monorepo root so
+# the @racenotes/shared workspace resolves, publish the Vite output, and fall
+# back to index.html for client-side routes like /r/:slug.
+
+[build]
+  command = "npm run build:web"
+  publish = "apps/web/dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
