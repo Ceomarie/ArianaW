@@ -18,6 +18,7 @@
     "expo-audio": "~0.3.0",
     "expo-dev-client": "~4.0.26",
     "expo-file-system": "~17.0.1",
+    "expo-haptics": "~13.0.1",
     "expo-keep-awake": "~13.0.2",
     "expo-location": "~17.0.1",
     "expo-status-bar": "~1.12.1",

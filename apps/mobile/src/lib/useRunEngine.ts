@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
 import {
   TriggerScheduler,
   buildSchedule,
@@ -12,8 +13,15 @@ import { requestLocationPermission, startTracking, stopTracking } from "./locati
 export interface RunEngine {
   running: boolean;
   miles: number;
+  /** The full ordered schedule (fired + upcoming). Stable during a run. */
+  plan: ScheduledNote[];
+  /** Notes still ahead, in firing order. */
   upcoming: ScheduledNote[];
+  /** Ids of notes that have auto-fired at their mile so far. */
+  firedNoteIds: string[];
   nowPlayingNoteId: string | null;
+  /** When the run started (epoch ms), or null before start — drives the timer. */
+  startedAtMs: number | null;
   error: string | null;
   start: () => Promise<void>;
   stop: () => Promise<void>;
@@ -33,8 +41,11 @@ export function useRunEngine(
 ): RunEngine {
   const [running, setRunning] = useState(false);
   const [miles, setMiles] = useState(0);
+  const [plan, setPlan] = useState<ScheduledNote[]>([]);
   const [upcoming, setUpcoming] = useState<ScheduledNote[]>([]);
+  const [fired, setFired] = useState<string[]>([]);
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
+  const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const schedulerRef = useRef<TriggerScheduler | null>(null);
@@ -42,9 +53,11 @@ export function useRunEngine(
   const queueRef = useRef<string[]>([]);
   const drainingRef = useRef(false);
 
-  // Keep an up-to-date plan for the "upcoming" list even before the run starts.
+  // Keep an up-to-date plan/upcoming even before the run starts.
   useEffect(() => {
-    setUpcoming(buildSchedule(notes, distanceMiles));
+    const built = buildSchedule(notes, distanceMiles);
+    setPlan(built);
+    setUpcoming(built);
   }, [notes, distanceMiles]);
 
   const enqueue = useCallback((noteId: string) => {
@@ -79,10 +92,14 @@ export function useRunEngine(
       return;
     }
     await configureAudioSession();
-    schedulerRef.current = new TriggerScheduler(notes, distanceMiles);
-    setUpcoming(schedulerRef.current.upcoming);
+    const sched = new TriggerScheduler(notes, distanceMiles);
+    schedulerRef.current = sched;
+    setPlan(sched.plan);
+    setUpcoming(sched.upcoming);
+    setFired([]);
     runStore.start();
     await startTracking();
+    setStartedAtMs(Date.now());
     setRunning(true);
   }, [notes, distanceMiles]);
 
@@ -100,7 +117,14 @@ export function useRunEngine(
       setMiles(meters / 1609.344);
       const sched = schedulerRef.current;
       if (!sched) return;
-      for (const note of sched.update(meters)) enqueue(note.id);
+      const due = sched.update(meters);
+      if (due.length > 0) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+          () => undefined,
+        );
+        setFired((f) => [...f, ...due.map((d) => d.id)]);
+        for (const note of due) enqueue(note.id);
+      }
       setUpcoming(sched.upcoming);
     });
     return unsub;
@@ -117,8 +141,11 @@ export function useRunEngine(
   return {
     running,
     miles,
+    plan,
     upcoming,
+    firedNoteIds: fired,
     nowPlayingNoteId: nowPlaying,
+    startedAtMs,
     error,
     start,
     stop,
