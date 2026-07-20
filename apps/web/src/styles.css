@@ -1,0 +1,136 @@
+:root {
+  --bg: #0b1020;
+  --card: #161c31;
+  --card2: #1e2742;
+  --fg: #eef1fb;
+  --muted: #9aa3c4;
+  --accent: #ff5a7a;
+  --accent2: #6c8bff;
+  --ok: #34d399;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(1200px 600px at 50% -10%, #1a2340, var(--bg));
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+.wrap.center {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+h1 { font-size: 28px; margin: 0 0 8px; line-height: 1.15; }
+h2 { font-size: 16px; margin: 0 0 14px; }
+.muted { color: var(--muted); line-height: 1.5; }
+code { background: #0006; padding: 2px 6px; border-radius: 6px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid #ffffff12;
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 16px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 12px;
+  border: none;
+}
+
+.record {
+  width: 100%;
+  padding: 18px;
+  font-size: 18px;
+  background: var(--card2);
+  color: var(--fg);
+  border: 1px dashed #ffffff33;
+}
+.record.recording {
+  background: #3a1622;
+  border-color: var(--accent);
+  color: #ffdbe3;
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse { 50% { opacity: 0.7; } }
+
+.or { text-align: center; color: var(--muted); margin: 12px 0; font-size: 13px; }
+
+.upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--card2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.upload input { display: none; }
+
+.preview { width: 100%; margin-top: 14px; }
+
+.text {
+  width: 100%;
+  padding: 13px 14px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  border: 1px solid #ffffff1f;
+  background: #0c1122;
+  color: var(--fg);
+  font: inherit;
+}
+.text:last-child { margin-bottom: 0; }
+
+.checkline { display: flex; gap: 10px; align-items: center; color: var(--fg); }
+.checkline input { width: 18px; height: 18px; }
+
+.slider { margin-top: 16px; }
+.slider input[type="range"] { width: 100%; accent-color: var(--accent2); }
+.milelabel { text-align: center; margin-top: 10px; color: var(--muted); }
+.milelabel strong { color: var(--fg); }
+
+.primary {
+  width: 100%;
+  margin-top: 22px;
+  padding: 17px;
+  font-size: 17px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+}
+.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.secondary {
+  margin-top: 18px;
+  padding: 13px 22px;
+  background: var(--card2);
+  color: var(--fg);
+}
+
+.error { color: #ffb4c0; margin-top: 12px; }
+.badge { font-size: 56px; }

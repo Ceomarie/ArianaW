@@ -1,0 +1,17 @@
+{
+  "name": "racenotes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Send a runner audio notes before race day; the app plays them at the right mile over their music.",
+  "workspaces": [
+    "packages/*",
+    "apps/web"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace @racenotes/shared",
+    "build:shared": "npm run build --workspace @racenotes/shared",
+    "dev:web": "npm run dev --workspace @racenotes/web",
+    "build:web": "npm run build --workspace @racenotes/web"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,23 @@
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.expo/
+.expo-shared/
+web-build/
+coverage/
+
+# env
+.env
+.env.local
+.env*.local
+
+# supabase local
+supabase/.branches/
+supabase/.temp/
+
+# os / editor
+.DS_Store
+*.log
+.idea/
+.vscode/
