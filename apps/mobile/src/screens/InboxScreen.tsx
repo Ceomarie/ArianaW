@@ -55,6 +55,23 @@ export function InboxScreen({
     }
   }
 
+  /**
+   * Pre-run check: start your music, then tap this. You should hear it duck for
+   * a sample note and a spoken line — proving both playback paths work before
+   * the race. Exercises the recorded-audio path and the text-to-speech path.
+   */
+  async function testOverMusic() {
+    setError(null);
+    try {
+      await configureAudioSession();
+      const sample = notes.find((n) => n.status === "approved" && n.audio_path);
+      if (sample) await preview(sample);
+      await speakText("This is a test. Your notes will play like this, over your music.");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   async function moderate(note: Note, status: Note["status"]) {
     setNotes((ns) => ns.map((n) => (n.id === note.id ? { ...n, status } : n)));
     try {
@@ -151,8 +168,19 @@ export function InboxScreen({
 
       {error && <Text style={{ color: C.accent, marginVertical: 12 }}>{error}</Text>}
 
+      {approvedCount > 0 && (
+        <>
+          <TouchableOpacity style={[S.secondary, { marginTop: 8 }]} onPress={testOverMusic}>
+            <Text style={S.secondaryText}>🔊 Test over your music</Text>
+          </TouchableOpacity>
+          <Text style={{ color: C.muted, fontSize: 12, marginTop: 6, textAlign: "center" }}>
+            Start your music first, then tap to hear a note duck it.
+          </Text>
+        </>
+      )}
+
       <TouchableOpacity
-        style={[S.primary, { marginTop: 8 }]}
+        style={[S.primary, { marginTop: 12 }]}
         disabled={preparing || approvedCount === 0}
         onPress={prepareAndRun}
       >

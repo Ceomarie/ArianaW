@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  engine-and-web:
+    name: Engine tests + web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install (workspaces)
+        run: npm install
+      - name: Run engine unit tests
+        run: npm test
+      - name: Build contributor web app
+        run: npm run build:web
+
+  mobile-typecheck:
+    name: Mobile type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # The mobile app is intentionally outside the npm workspaces (Metro
+      # hoisting), so install it on its own before type-checking.
+      - name: Install mobile deps
+        working-directory: apps/mobile
+        run: npm install
+      - name: Type-check
+        working-directory: apps/mobile
+        run: npx tsc --noEmit
